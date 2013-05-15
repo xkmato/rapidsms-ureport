@@ -1,5 +1,266 @@
 [
-    {"pk": 2, "model": "sites.site", "fields": {"domain": "ureport-southsudan.com", "name": "uReport"}},
+
+    {
+        "pk": 1,
+        "model": "auth.user",
+        "fields": {
+            "username": "admin",
+            "first_name": "",
+            "last_name": "",
+            "is_active": true,
+            "is_superuser": true,
+            "is_staff": true,
+            "last_login": "2012-10-05 14:24:47",
+            "password": "sha1$050e9$8b8fefa9a0f695ae01e2150108d1ffbe77ff1db3",
+            "email": "",
+            "date_joined": "2011-12-05 11:45:09"
+        }
+    },
+
+    {
+        "pk": 2,
+        "model": "sites.site",
+        "fields": {
+            "domain": "ureport-southsudan.com",
+            "name": "uReport"
+        }
+    },
+
+    {
+        "pk": 34,
+        "model": "rapidsms_xforms.xform",
+        "fields": {
+            "name": "poll",
+            "keyword": "poll",
+            "created": "2012-02-20 22:17:38",
+            "restrict_message": null,
+            "modified": "2012-02-20 22:40:22",
+            "site": 1,
+            "owner": 1,
+            "separator": null,
+            "restrict_to": [],
+            "active": true,
+            "command_prefix": "+",
+            "response": "thanks for your response",
+            "keyword_prefix": null,
+            "description": ""
+        }
+    },
+
+    {
+        "pk": "res31",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "res3",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "res21",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "res2",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "res11",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "res1",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "ussd_root3",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "ussd_root",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+    {
+        "pk": "ussd_root2",
+        "model": "ussd.menu",
+        "fields": {}
+    },
+
+    {
+        "pk": "weekly_poll",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 3,
+            "parent": "ussd_root",
+            "level": 1,
+            "label": "This Week's Poll",
+            "lft": 2,
+            "tree_id": 1,
+            "order": 1
+        }
+    },
+    {
+        "pk": "res31",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 7,
+            "parent": "res3",
+            "level": 3,
+            "label": "no:72% unknown:9% yes:17%",
+            "lft": 6,
+            "tree_id": 1,
+            "order": 1
+        }
+    },
+    {
+        "pk": "res3",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 8,
+            "parent": "ussd_root3",
+            "level": 2,
+            "label": "PCV - Immunisation",
+            "lft": 5,
+            "tree_id": 1,
+            "order": 3
+        }
+    },
+    {
+        "pk": "res21",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 11,
+            "parent": "res2",
+            "level": 3,
+            "label": "no:17% Other:5% yes:76%",
+            "lft": 10,
+            "tree_id": 1,
+            "order": 1
+        }
+    },
+    {"pk": "res2",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 12,
+            "parent": "ussd_root3",
+            "level": 2,
+            "label": "VAC #1",
+            "lft": 9,
+            "tree_id": 1,
+            "order": 2
+        }
+    },
+    {
+        "pk": "res11",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 15,
+            "parent": "res1",
+            "level": 3,
+            "label": "0 responses",
+            "lft": 14,
+            "tree_id": 1,
+            "order": 1
+        }
+    },
+    {
+        "pk": "res1",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 16,
+            "parent": "ussd_root3",
+            "level": 2,
+            "label": "CODES-Kyanamukaka",
+            "lft": 13,
+            "tree_id": 1,
+            "order": 1
+        }
+    },
+    {
+        "pk": "ussd_root3",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 17,
+            "parent": "ussd_root",
+            "level": 1,
+            "label": "Poll Results",
+            "lft": 4,
+            "tree_id": 1,
+            "order": 2
+        }
+    },
+    {
+        "pk": "send_report",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 19,
+            "parent": "ussd_root",
+            "level": 1,
+            "label": "Send Report",
+            "lft": 18,
+            "tree_id": 1,
+            "order": 3
+        }
+    },
+    {
+        "pk": "ussd_root",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 20,
+            "parent": null,
+            "level": 0,
+            "label": "Ignored",
+            "lft": 1,
+            "tree_id": 1,
+            "order": 1
+        }
+    },
+    {
+        "pk": "question_response",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 2,
+            "parent": null,
+            "level": 0,
+            "label": "thanks",
+            "lft": 1,
+            "tree_id": 2,
+            "order": 0
+        }
+    },
+    {
+        "pk": "report_response",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 2,
+            "parent": null,
+            "level": 0,
+            "label": "",
+            "lft": 1,
+            "tree_id": 3,
+            "order": 0
+        }
+    },
+    {
+        "pk": "ussd_root2",
+        "model": "ussd.screen",
+        "fields": {
+            "rght": 2,
+            "parent": null,
+            "level": 0,
+            "label": "Thanks For your response",
+            "lft": 1,
+            "tree_id": 4,
+            "order": 0
+        }
+    },
 
     {
         "pk": 122,
@@ -14,23 +275,6 @@
             "sites": [],
             "user": 1,
             "type": "district",
-            "start_date": null,
-            "response_type": "a"
-        }
-    },
-    {
-        "pk": 123,
-        "model": "poll.poll",
-        "fields": {
-            "default_response": "",
-            "name": "contactname",
-            "end_date": null,
-            "contacts": [],
-            "messages": [],
-            "question": "Best responses may be shared!Send us your name,or if you prefer a nickname so we can give u recognition for good replies by sharing them in the media!",
-            "sites": [],
-            "user": 1,
-            "type": "t",
             "start_date": null,
             "response_type": "a"
         }
@@ -287,22 +531,6 @@
         }
     },
     {
-        "pk": 75,
-        "model": "script.scriptstep",
-        "fields": {
-            "script": "ureport_autoreg",
-            "retry_offset": 3600,
-            "rule": "R",
-            "email": null,
-            "num_tries": 1,
-            "start_offset": 60,
-            "message": "",
-            "poll": 123,
-            "order": 5,
-            "giveup_offset": 3600
-        }
-    },
-    {
         "pk": 76,
         "model": "script.scriptstep",
         "fields": {
@@ -456,22 +684,6 @@
         }
     },
     {
-        "pk": 85,
-        "model": "script.scriptstep",
-        "fields": {
-            "script": "ureport_autoreg_luo",
-            "retry_offset": 3600,
-            "rule": "R",
-            "email": null,
-            "num_tries": 1,
-            "start_offset": 60,
-            "message": "",
-            "poll": 123,
-            "order": 5,
-            "giveup_offset": 3600
-        }
-    },
-    {
         "pk": 86,
         "model": "script.scriptstep",
         "fields": {
@@ -521,6 +733,129 @@
     },
 
     {
+        "pk": "ureport_autoreg2",
+        "model": "script.script",
+        "fields": {
+            "enabled": true,
+            "name": "uReport autoregistration script2",
+            "sites": [2]
+        }
+    },
+
+    {
+        "pk": 90,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": null,
+            "rule": "w",
+            "email": null,
+            "num_tries": null,
+            "start_offset": 0,
+            "message": "Welcome to U report where you can SPEAK UP and BE HEARD. U-report is a FREE SMS text message system where you can speak out on issues in your community.",
+            "poll": null,
+            "order": 0,
+            "giveup_offset": 60
+        }
+    },
+    {
+        "pk": 93,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": null,
+            "rule": "w",
+            "email": null,
+            "num_tries": null,
+            "start_offset": 60,
+            "message": "CONGRATULATIONS!!! You are now a registered member of U-report! With U-report, you can make a real difference!  Speak Up and Be Heard! from UNICEF",
+            "poll": null,
+            "order": 7,
+            "giveup_offset": 0
+        }
+    },
+    {
+        "pk": 94,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": 3600,
+            "rule": "R",
+            "email": null,
+            "num_tries": 1,
+            "start_offset": 0,
+            "message": "",
+            "poll": 121,
+            "order": 1,
+            "giveup_offset":
+                3600
+        }
+    },
+    {
+        "pk": 95,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": 3600,
+            "rule": "M",
+            "email": null,
+            "num_tries": 1,
+            "start_offset": 0,
+            "message": "",
+            "poll": 122,
+            "order": 2,
+            "giveup_offset": 3600
+        }
+    },
+    {
+        "pk": 97,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": 3600,
+            "rule": "M",
+            "email": null,
+            "num_tries": 1,
+            "start_offset": 60,
+            "message": "",
+            "poll": 124,
+            "order": 4,
+            "giveup_offset":
+                3600}
+    },
+    {
+        "pk": 98,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": 3600,
+            "rule": "R",
+            "email": null,
+            "num_tries": 1,
+            "start_offset": 60,
+            "message": "",
+            "poll": 125,
+            "order": 5,
+            "giveup_offset": 3600
+        }
+    },
+    {
+        "pk": 99,
+        "model": "script.scriptstep",
+        "fields": {
+            "script": "ureport_autoreg2",
+            "retry_offset": 3600,
+            "rule": "R",
+            "email": null,
+            "num_tries": 1,
+            "start_offset": 0,
+            "message": "",
+            "poll": 126,
+            "order": 6,
+            "giveup_offset": 3600
+        }
+    },
+    {
         "pk": "blacklist_script",
         "model": "script.script",
         "fields": {"enabled": false, "name": "Blacklist script", "sites": []}
@@ -528,13 +863,36 @@
     {
         "pk": 230,
         "model": "poll.poll",
-        "fields": {"default_response": "", "name": "blacklist", "end_date": null, "contacts": [], "messages": [], "question": "Your U-Report opt out is confirmed.Please dont forget to tell us the reason for quitting.you can always text join to reactivate.", "sites": [], "user": 1, "type": "t", "start_date": null, "response_type": "a"}
+        "fields": {
+            "default_response": "",
+            "name": "blacklist",
+            "end_date": null,
+            "contacts": [],
+            "messages": [],
+            "question": "Your U-Report opt out is confirmed.Please dont forget to tell us the reason for quitting.you can always text join to reactivate.",
+            "sites": [],
+            "user": 1,
+            "type": "t",
+            "start_date": null,
+            "response_type": "a"
+        }
     },
 
     {
         "pk": 111,
         "model": "script.scriptstep",
-        "fields": {"script": "blacklist_script", "retry_offset": null, "rule": "w", "email": null, "num_tries": 1, "start_offset": 0, "message": "", "poll": 230, "order": 1, "giveup_offset": 86400}
+        "fields": {
+            "script": "blacklist_script",
+            "retry_offset": null,
+            "rule": "w",
+            "email": null,
+            "num_tries": 1,
+            "start_offset": 0,
+            "message": "",
+            "poll": 230,
+            "order": 1,
+            "giveup_offset": 86400
+        }
     }
 
 

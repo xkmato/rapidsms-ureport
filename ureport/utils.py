@@ -2,21 +2,28 @@
 from contact.models import MessageFlag
 from rapidsms.models import Contact
 from poll.models import ResponseCategory
-from ureport.models.models import UPoll as Poll, PollAttribute, PollAttributeValue
+from ureport.models.models import UPoll as Poll, PollAttribute
 from script.models import ScriptStep
 from django.db.models import Count
 from .models import Ureporter, UreportContact
 from unregister.models import Blacklist
 from django.conf import settings
-from rapidsms_httprouter.models import Message, MessageBatch
+from rapidsms_httprouter.models import Message
 from django.contrib.sites.models import Site
-from rapidsms.models import Contact, Connection
-from django.db import models, transaction, connection
+from rapidsms.models import Connection
 from poll.models import gettext_db
 from django.db.models import Q
 import datetime
 import re
+from uganda_common.models import Access
 
+
+def get_access(request):
+    try:
+        access = Access.objects.get(user=request.user)
+    except Access.DoesNotExist:
+        access = None
+    return access
 
 def get_contacts(**kwargs):
     request = kwargs.pop('request')
@@ -71,7 +78,7 @@ def retrieve_poll(request, pks=None):
         pks = request.GET.get('pks', '')
     not_showing = list(
         PollAttribute.objects.filter(key='viewable', values__value='false').values_list('values__poll_id', flat=True))
-    not_showing = [366, 420, 419, 297, 296, 349, 350] + not_showing
+    not_showing = not_showing
     if pks == 'l':
         return [Poll.objects.exclude(pk__in=script_polls).exclude(pk__in=not_showing).latest('start_date')]
 

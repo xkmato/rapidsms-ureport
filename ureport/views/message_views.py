@@ -5,6 +5,7 @@ from django.shortcuts import render_to_response
 from django.shortcuts import get_object_or_404
 from django.template import RequestContext
 from django.http import HttpResponse, HttpResponseRedirect
+from django.views.decorators.cache import never_cache
 from ureport.utils import get_flagged_messages
 from uganda_common.utils import ExcelResponse
 from rapidsms_httprouter.views import receive
@@ -16,25 +17,24 @@ from generic.sorters import SimpleSorter
 from rapidsms.models import Connection
 from contact.models import Flag, MessageFlag
 
-from ureport.forms import SendMessageForm, SearchMessagesForm
+from ureport.forms import SendMessageForm, SearchMessagesForm, ForwardMessageForm
 from ureport.models import MessageAttribute, MessageDetail
 from contact.forms import FlaggedMessageForm
 from ureport.views.utils.tags import _get_responses
 from contact.forms import FreeSearchTextForm, DistictFilterMessageForm
 from generic.sorters import TupleSorter
 from contact.utils import get_mass_messages, get_messages
-from ureport.utils import get_quit_messages, get_autoreg_messages, get_quit_messages, get_unsolicitized_messages, get_poll_messages
+from ureport.utils import get_quit_messages, get_autoreg_messages, get_unsolicitized_messages, get_poll_messages, get_access
 from contact.models import MassText
-from ureport.models import Ureporter
 from ureport.forms import BlacklistForm2, ReplyTextForm
 from ureport.views.utils.paginator import ureport_paginate
-from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
 from uganda_common.utils import assign_backend
 
 
 @login_required
 def messages(request):
+    access = get_access(request)
     filter_forms = [SearchMessagesForm, DistictFilterMessageForm]
     action_forms = [ReplyTextForm, BlacklistForm2]
     partial_row = 'ureport/partials/messages/message_row.html'
@@ -45,10 +45,14 @@ def messages(request):
                ('Date', True, 'date',
                 SimpleSorter()), ('Type', True, 'application',
                                   SimpleSorter()), ('Response', False, 'response', None)]
+
+    queryset = get_messages(request=request)
+    if access:
+        queryset = queryset.filter(connection__contact__groups__in=access.groups.all())
     return generic(
         request,
         model=Message,
-        queryset=get_messages,
+        queryset=queryset,
         filter_forms=filter_forms,
         action_forms=action_forms,
         objects_per_page=25,
@@ -65,6 +69,7 @@ def messages(request):
 
 @login_required
 def autoreg_messages(request):
+    access = get_access(request)
     filter_forms = [FreeSearchTextForm, DistictFilterMessageForm]
     action_forms = [ReplyTextForm, BlacklistForm2]
     partial_row = 'ureport/partials/messages/message_row.html'
@@ -75,10 +80,14 @@ def autoreg_messages(request):
                ('Date', True, 'date',
                 SimpleSorter()), ('Type', True, 'application',
                                   SimpleSorter()), ('Response', False, 'response', None)]
+
+    queryset = get_autoreg_messages(request=request)
+    if access:
+        queryset = queryset.filter(connection__contact__groups__in=access.groups.all())
     return generic(
         request,
         model=Message,
-        queryset=get_autoreg_messages,
+        queryset=queryset,
         filter_forms=filter_forms,
         action_forms=action_forms,
         objects_per_page=25,
@@ -95,6 +104,7 @@ def autoreg_messages(request):
 
 @login_required
 def unsolicitized_messages(request):
+    access = get_access(request)
     filter_forms = [FreeSearchTextForm, DistictFilterMessageForm]
     action_forms = [ReplyTextForm, BlacklistForm2]
     partial_row = 'ureport/partials/messages/message_row.html'
@@ -105,10 +115,14 @@ def unsolicitized_messages(request):
                ('Date', True, 'date',
                 SimpleSorter()), ('Type', True, 'application',
                                   SimpleSorter()), ('Response', False, 'response', None)]
+
+    queryset = get_unsolicitized_messages(request=request)
+    if access:
+        queryset = queryset.filter(connection__contact__groups__in=access.groups.all())
     return generic(
         request,
         model=Message,
-        queryset=get_unsolicitized_messages,
+        queryset=queryset,
         filter_forms=filter_forms,
         action_forms=action_forms,
         objects_per_page=25,
@@ -125,6 +139,7 @@ def unsolicitized_messages(request):
 
 @login_required
 def poll_messages(request):
+    access = get_access(request)
     filter_forms = [FreeSearchTextForm, DistictFilterMessageForm]
     action_forms = [ReplyTextForm, BlacklistForm2]
     partial_row = 'ureport/partials/messages/message_row.html'
@@ -135,10 +150,14 @@ def poll_messages(request):
                ('Date', True, 'date',
                 SimpleSorter()), ('Type', True, 'application',
                                   SimpleSorter()), ('Response', False, 'response', None)]
+
+    queryset = get_poll_messages(request=request)
+    if access:
+        queryset = queryset.filter(connection__contact__groups__in=access.groups.all())
     return generic(
         request,
         model=Message,
-        queryset=get_poll_messages,
+        queryset=queryset,
         filter_forms=filter_forms,
         action_forms=action_forms,
         objects_per_page=25,
@@ -155,6 +174,7 @@ def poll_messages(request):
 
 @login_required
 def quit_messages(request):
+    access = get_access(request)
     filter_forms = [FreeSearchTextForm, DistictFilterMessageForm]
     action_forms = [ReplyTextForm, BlacklistForm2]
     partial_row = 'ureport/partials/messages/message_row.html'
@@ -165,10 +185,14 @@ def quit_messages(request):
                ('Date', True, 'date',
                 SimpleSorter()), ('Type', True, 'application',
                                   SimpleSorter()), ('Response', False, 'response', None)]
+
+    queryset = get_quit_messages(request=request)
+    if access:
+        queryset = queryset.filter(connection__contact__groups__in=access.groups.all())
     return generic(
         request,
         model=Message,
-        queryset=get_quit_messages,
+        queryset=queryset,
         filter_forms=filter_forms,
         action_forms=action_forms,
         objects_per_page=25,
@@ -185,16 +209,19 @@ def quit_messages(request):
 
 @login_required
 def mass_messages(request):
+    access = get_access(request)
     columns = [('Message', True, 'text', TupleSorter(0)),
-               ('Identifier', True, 'connection__pk', SimpleSorter()),
-               ('Time', True, 'date', TupleSorter(1)), ('User', True, 'user',  TupleSorter(2)),
+               ('Time', True, 'date', TupleSorter(1)), ('User', True, 'user', TupleSorter(2)),
                ('Recipients', True, 'response', TupleSorter(3)),
                ('Type', True, 'type', TupleSorter(4))]
 
+    queryset = get_mass_messages(request=request)
+    if access:
+        queryset = queryset.filter(user=access.user)
     return generic(
         request,
         model=MassText,
-        queryset=get_mass_messages,
+        queryset=queryset,
         objects_per_page=10,
         partial_row='contact/partials/mass_message_row.html',
         paginator_template='ureport/partials/new_pagination.html',
@@ -210,18 +237,19 @@ def mass_messages(request):
 
 @login_required
 @transaction.commit_on_success
+@never_cache
 def send_message(request, template='ureport/partials/forward.html'):
     if not request.method == 'POST':
         send_message_form = SendMessageForm()
 
         if request.GET.get('forward', None):
+            # import pdb; pdb.set_trace()
             msg = request.GET.get('msg')
 
             template = 'ureport/partials/forward.html'
             message = Message.objects.get(pk=int(msg))
             send_message_form = \
-                SendMessageForm(data={'text': message.text,
-                                      'recipients': ''})
+                ForwardMessageForm(data={'text': message.text})
             request.session['mesg'] = message
         if request.GET.get('reply', None):
             msg = request.GET.get('msg')
@@ -290,7 +318,7 @@ def flagged_messages(request):
         ,
         base_template='ureport/flagged_message_base.html',
         columns=[('Identifier', True, 'message__connection_id', SimpleSorter()),
-                ('Message', True, 'message__text', SimpleSorter()),
+                 ('Message', True, 'message__text', SimpleSorter()),
                  ('Date', True, 'message__date', SimpleSorter()),
                  ('Flags', False, 'message__flagged', None)],
         sort_column='date',
@@ -318,7 +346,7 @@ def view_flagged_with(request, pk):
         results_title='Messages Flagged With %s' % flag.name,
         columns=[('Message', True, 'text', SimpleSorter()),
                  ('Identifier', True, 'connection_id', SimpleSorter()),
-                 ('Date',True, 'date', SimpleSorter()),
+                 ('Date', True, 'date', SimpleSorter()),
                  ('Type', True, 'application', SimpleSorter())],
         sort_column='date',
         sort_ascending=False,

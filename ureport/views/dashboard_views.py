@@ -20,15 +20,14 @@ from unregister.models import Blacklist
 from poll.models import Translation, Poll
 from ureport.models import MessageAttribute, AlertsExport, Settings, \
     MessageDetail
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import EmptyPage, PageNotAnInteger
 import datetime
 from ureport.views.utils.paginator import UreportPaginator
-from django.db import transaction
-from contact.models import Flag, MessageFlag
+from contact.models import Flag
 from django.db.models import Q
 from ureport.settings import UREPORT_ROOT
-import os, sys
-from itertools import chain
+from ureport.utils import get_access
+import os
 
 
 @login_required
@@ -160,24 +159,23 @@ def mp_dashboard(request):
 
 @login_required
 def alerts(request):
-    select_poll = SelectPoll()
+    access = get_access(request)
     poll_form = NewPollForm()
     range_form = rangeForm()
     poll_form.updateTypes()
-    assign_polls=Poll.objects.exclude(start_date=None).order_by('-pk')[0:5]
-    district_form=DistrictForm(request.POST or None)
-    if request.GET.get('reset_districts',None):
-        request.session['districts']=None
-        request.session['groups']=None
+    assign_polls = Poll.objects.exclude(start_date=None).order_by('-pk')[0:5]
+    district_form = DistrictForm(request.POST or None)
+    if request.GET.get('reset_districts', None):
+        request.session['districts'] = None
+        request.session['groups'] = None
 
     if district_form.is_valid():
-        request.session['districts']=[c.pk for c in district_form.cleaned_data['districts']]
+        request.session['districts'] = [c.pk for c in district_form.cleaned_data['districts']]
 
-    groupform = AssignResponseGroupForm(request=request)
+    groupform = AssignResponseGroupForm(request=request, access=access)
     if request.method == 'POST' and request.POST.get('groups', None):
         g_form = AssignResponseGroupForm(request.POST, request=request)
         if g_form.is_valid():
-
             request.session['groups'] = g_form.cleaned_data['groups']
 
     template = 'ureport/polls/alerts.html'
@@ -185,15 +183,16 @@ def alerts(request):
         message_list = \
             Message.objects.filter(details__attribute__name='alert'
 
-                                   ).filter(connection__contact__reporting_location__in=request.session.get('districts'))
+            ).filter(connection__contact__reporting_location__in=request.session.get('districts'))
     else:
-        message_list =Message.objects.filter(details__attribute__name='alert')
+        message_list = Message.objects.filter(details__attribute__name='alert')
 
-    if  request.session.get('groups', None):
+    if request.session.get('groups', None):
         message_list = message_list.filter(connection__contact__groups__in=request.session.get('groups'
         ))
 
-
+    if access:
+        message_list = message_list.filter(connection__contact__groups__in=access.groups.all())
     (capture_status, _) = \
         Settings.objects.get_or_create(attribute='alerts')
     (rate, _) = MessageAttribute.objects.get_or_create(name='rating')
@@ -201,7 +200,7 @@ def alerts(request):
     # message_list=[Message.objects.latest('date')]
     # use more efficient count
 
-    if request.GET.get('download', None):
+    if request.GET.get('download', None) and access is None:
         range_form = rangeForm(request.POST)
         if range_form.is_valid():
             start = range_form.cleaned_data['startdate']
@@ -234,21 +233,21 @@ def alerts(request):
                                                               % search)
                                                | Q(connection__contact__reporting_location__name__iregex=".*\m(%s)\y.*"
                                                                                                          % search)
-                                               | Q(connection__identity__iregex=".*\m(%s)\y.*"
-                                                                                % search))
+                                               | Q(connection__pk__iregex=".*\m(%s)\y.*"
+                                                                          % search))
         elif search[0] == "'" and search[-1] == "'":
 
             search = search[1:-1]
             message_list = message_list.filter(Q(text__iexact=search)
                                                | Q(connection__contact__reporting_location__name__iexact=search)
-                                               | Q(connection__identity__iexact=search))
+                                               | Q(connection__pk__iexact=search))
         elif search == "=numerical value()":
             message_list = message_list.filter(text__iregex="(-?\d+(\.\d+)?)")
         else:
 
             message_list = message_list.filter(Q(text__icontains=search)
                                                | Q(connection__contact__reporting_location__name__icontains=search)
-                                               | Q(connection__identity__icontains=search))
+                                               | Q(connection__pk__icontains=search))
 
     if request.GET.get('capture', None):
         (s, _) = Settings.objects.get_or_create(attribute='alerts')
@@ -267,6 +266,8 @@ def alerts(request):
         msgs = Message.objects.filter(details__attribute__name='alert',
                                       direction='I'
         ).filter(date__gte=date).exclude(pk__in=prev)
+        if access:
+            msgs = msgs.filter(connection__contact__groups__in=access.groups.all())
         request.session['prev'] = list(msgs.values_list('pk',
                                                         flat=True))
         msgs_list = []
@@ -347,9 +348,8 @@ def alerts(request):
         'rate': rate,
         'district_form': district_form,
         'range_form': range_form,
-        'groupform':groupform,
-        }, context_instance=RequestContext(request))
-
+        'groupform': groupform,
+    }, context_instance=RequestContext(request))
 
 
 def remove_captured_ind(request, pk):

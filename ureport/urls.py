@@ -2,13 +2,14 @@
 from django.conf.urls.defaults import *
 from ureport.views import *
 from django.contrib.auth.decorators import login_required
-from generic.views import  generic_row
-from contact.forms import FreeSearchTextForm, FreeSearchForm, MultipleDistictFilterForm, HandledByForm, FlaggedForm, FlagMessageForm,  GenderFilterForm, DistictFilterForm, FilterGroupsForm, AssignGroupForm, AgeFilterForm
+from generic.views import generic_row
+from contact.forms import FreeSearchForm, MultipleDistictFilterForm, GenderFilterForm, FilterGroupsForm, \
+    AssignGroupForm, AgeFilterForm
 from tastypie.api import Api
-from .api import PollResponseResource,PollResource,MessageResource,ContactResource,ResponseResource
+from .api import PollResponseResource, PollResource, MessageResource, ContactResource, ResponseResource
 from ureport.views.excel_reports_views import generate_poll_dump_report, generate_per_district_report
 
-message_resource=MessageResource()
+message_resource = MessageResource()
 
 v1_api = Api(api_name='v1')
 v1_api.register(MessageResource())
@@ -107,6 +108,8 @@ urlpatterns = patterns('',
        url(r'^contact/(?P<pk>\d+)/blacklist/$', blacklist, name="blacklist"),
        url(r'^contact/(?P<pk>\d+)/delete/$', delete, name="delete_contact"),
         url(r'^view_poll/(?P<pk>\d+)/$', view_poll, name="view_poll"),
+    url(r'^poll_status/(?P<pk>\d+)/$', poll_status, name="poll_status"),
+
     url(r'^category/(?P<pk>\d+)/edit/$', edit_category, name="edit_category"),
     url(r'^category/(?P<pk>\d+)/delete/$', delete_category, name="delete_category"),
     url(r'^rule/(?P<pk>\d+)/delete/$', delete_rule, name="delete_rule"),
@@ -153,4 +156,7 @@ urlpatterns = patterns('',
     url(r'^comfirmmessages/(?P<key>.+)/$',comfirmmessages,name="comfirm-messages"),
     url(r"^dumpreport/(\d+)/$", generate_poll_dump_report),
     url(r"^districtreport/(\d+)/$", generate_per_district_report),
+
+    url(r'^test_reg/(?P<connection>\d+)/$', user_registration_status, name="user_registration_status"),
+
 )

@@ -26,8 +26,8 @@ from .models import AutoregGroupRules
 from uganda_common.utils import ExcelResponse
 from ureport.models import MessageAttribute, MessageDetail
 from django.utils.safestring import mark_safe
-
-import subprocess
+from uganda_common.models import Access
+import tasks
 
 
 class EditReporterForm(forms.ModelForm):
@@ -133,31 +133,20 @@ class SearchResponsesForm(FilterForm):
         search = self.cleaned_data['search'].strip()
         if search == '':
             return queryset
-        elif search[0] == '"' and search[-1] == '"':
-            search = search[1:-1]
-            return queryset.filter(Q(message__text__iregex=".*\m(%s)\y.*"
-                                                           % search)
-                                   | Q(message__connection__contact__reporting_location__name__iregex=".*\m(%s)\y.*"
-                                                                                                      % search)
-                                   | Q(message__connection_id__iregex=".*\m(%s)\y.*"
-                                                                             % search))
-
-        elif search == "'=numerical value()'":
-            return queryset.filter(message__text__iregex="^[0-9]+$")
 
         elif search[0] == "'" and search[-1] == "'":
 
             search = search[1:-1]
             return queryset.filter(Q(message__text__iexact=search)
                                    | Q(message__connection__contact__reporting_location__name__iexact=search)
-                                   | Q(message__connection_id__iexact=search))
+                                   | Q(message__connection__pk__iexact=search))
         elif search == "=numerical value()":
             return queryset.filter(message__text__iregex="(-?\d+(\.\d+)?)")
         else:
 
             return queryset.filter(Q(message__text__icontains=search)
                                    | Q(message__connection__contact__reporting_location__name__icontains=search)
-                                   | Q(message__connection_id__icontains=search))
+                                   | Q(message__connection__pk__icontains=search))
 
 
 class SearchMessagesForm(FilterForm):
@@ -179,7 +168,7 @@ class SearchMessagesForm(FilterForm):
                                    | Q(connection__contact__reporting_location__name__iregex=".*\m(%s)\y.*"
                                                                                              % search)
                                    | Q(connection__pk__iregex=".*\m(%s)\y.*"
-                                                                    % search))
+                                                              % search))
 
         elif search == "'=numerical value()'":
             return queryset.filter(text__iregex="^[0-9]+$")
@@ -419,12 +408,22 @@ class NewPollForm(forms.Form): # pragma: no cover
     # to optionally have groups (i.e., poll doesn't explicitly depend on the rapidsms-auth
     # app.
     def __init__(self, data=None, **kwargs):
+        queryset = Group.objects.order_by('name')
+        if 'request' in kwargs:
+            request = kwargs.pop('request')
         if data:
             forms.Form.__init__(self, data, **kwargs)
         else:
             forms.Form.__init__(self, **kwargs)
+        try:
+            access = Access.objects.get(user=request.user)
+            queryset = access.groups.order_by('name')
+        except Access.DoesNotExist:
+            pass
+        except UnboundLocalError:
+            pass
         if hasattr(Contact, 'groups'):
-            self.fields['groups'] = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), required=False)
+            self.fields['groups'] = forms.ModelMultipleChoiceField(queryset=queryset, required=False)
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -439,6 +438,18 @@ class NewPollForm(forms.Form): # pragma: no cover
 
         return cleaned_data
 
+    def clean_default_response_en(self):
+        return self._cleaned_default_response(self.data['default_response_en'])
+
+    def clean_default_response_luo(self):
+        return self._cleaned_default_response(self.data['default_response_luo'])
+
+    def clean_default_response_kdj(self):
+        return self._cleaned_default_response(self.cleaned_data['default_response_kdj'])
+
+    def _cleaned_default_response(self, default_response):
+        return default_response.replace('%', '%%')
+
 
 class AssignResponseGroupForm(ActionForm):
     action_label = 'Assign to group(s)'
@@ -450,6 +461,9 @@ class AssignResponseGroupForm(ActionForm):
     # This does, however, also make the polling app independent of authsites.
     def __init__(self, data=None, **kwargs):
         self.request = kwargs.pop('request')
+        self.access = None
+        if 'access' in kwargs:
+            self.access = kwargs.pop('access')
         if data:
             forms.Form.__init__(self, data, **kwargs)
         else:
@@ -461,6 +475,8 @@ class AssignResponseGroupForm(ActionForm):
                     required=False)
             else:
                 self.fields['groups'] = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), required=False)
+            if self.access:
+                self.fields['groups'] = forms.ModelChoiceField(queryset=self.access.groups.all())
 
     def perform(self, request, results):
         groups = self.cleaned_data['groups']
@@ -511,6 +527,11 @@ class SelectCategory(forms.Form):
 class SendMessageForm(forms.Form):
     recipients = forms.CharField(label="recepient(s)", required=True, help_text="enter numbers commas separated",
                                  widget=forms.HiddenInput)
+    text = forms.CharField(required=True, widget=SMSInput())
+
+
+class ForwardMessageForm(forms.Form):
+    recipients = forms.CharField(label="recepient(s)", required=True, help_text="enter numbers commas separated")
     text = forms.CharField(required=True, widget=SMSInput())
 
 
@@ -575,11 +596,11 @@ class UreporterSearchForm(FilterForm):
         elif searchx[0] in ["'", '"'] and searchx[-1] in ["'", '"']:
             searchx = searchx[1:-1]
             return queryset.filter(Q(district__iregex=".*\m(%s)\y.*" % searchx)
-                                   | Q(id__iregex=".*\m(%s)\y.*" % searchx))
+                                   | Q(connection_pk__icontains=".*\m(%s)\y.*" % searchx))
 
         else:
             return queryset.filter(Q(district__icontains=searchx)
-                                   | Q(id__icontains=searchx))
+                                   | Q(connection_pk=searchx))
 
 
 class AgeFilterForm(FilterForm):
@@ -704,6 +725,32 @@ class TemplateMessage(ActionForm):
 
 
 class GroupsFilter(forms.Form):
-    group_list = forms.ModelMultipleChoiceField(queryset=
-                                                Group.objects.order_by('name'), required=False)
+    def __init__(self, *args, **kwargs):
+        if 'request' in kwargs:
+            request = kwargs.pop('request')
+        super(GroupsFilter, self).__init__(*args, **kwargs)
+        try:
+            access = Access.objects.get(user=request.user)
+            self.fields['group_list'] = forms.ModelMultipleChoiceField(queryset=access.groups.order_by('name'),
+                                                                       required=False)
+        except Access.DoesNotExist, e:
+            print "Access DoesNotExist", e
+            self.fields['group_list'] = forms.ModelMultipleChoiceField(queryset=Group.objects.order_by('name'),
+                                                                       required=False)
+        except UnboundLocalError, e:
+            print "UnboundLocalError:", e
+            self.fields['group_list'] = forms.ModelMultipleChoiceField(queryset=Group.objects.order_by('name'),
+                                                                       required=False)
+        except Exception, e:
+            print "General Exception: ", e
+            self.fields['group_list'] = forms.ModelMultipleChoiceField(queryset=Group.objects.order_by('name'),
+                                                                       required=False)
 
+
+class PushToMtracForm(ActionForm):
+    action_label = "Push Selected Messages to Mtrac"
+
+    def perform(self, request, results):
+        results = set([r.pk for r in results])
+        tasks.push_to_mtrac.delay(results)
+        return "%d Messages were pushed to mtrac" % len(results), "success"
